@@ -1,0 +1,57 @@
+declare function ShipTWR
+{
+    set mth to SHIP:MAXTHRUST. // (depends on fixed kOS issue 940)
+    set r to SHIP:ALTITUDE+SHIP:BODY:RADIUS.
+    set w to SHIP:MASS * SHIP:BODY:MU / r / r.
+    return mth/w.
+}
+lock steering to ship:srfretrograde:vector.
+lock throttle to 0.
+brakes on.
+sas off.
+rcs on.
+until (alt:radar < 100) {
+clearscreen.
+local heightoverground is (alt:radar-100).
+if(verticalspeed<0){
+local speedatground is (2*heightoverground*9.81*(ShipTWR-1.1)-(abs(verticalspeed)*abs(verticalspeed)+abs(groundspeed)*abs(groundspeed))).
+if(speedatground < 0){
+lock throttle to 1.0.
+print "suicide burning".
+gear on.
+}else{
+lock throttle to 0.0.
+print "waiting for suicide burn".
+print "speed at ground= " + round(sqrt(speedatground)).
+}
+}
+local heightoverland is (alt:radar-25).
+print "mode: descend".
+print "height over ground= " + round(heightoverland).
+print "speed=" + round(sqrt(abs(verticalspeed)*abs(verticalspeed)+abs(groundspeed)*abs(groundspeed))).
+if(verticalspeed<0){
+}else{
+print "moving upwards".
+}
+wait 0.1.
+}
+lock steering to up.
+until status = "landed"{
+lock throttle to -((ship:verticalspeed+((alt:radar-6)/10))/5).
+print "mode: final descend".
+print "height over ground= " + round(alt:radar-25).
+print "vertical speed=" + round(verticalspeed).
+wait 0.05.
+until status = "landed"{
+if(groundspeed>0.5){
+local vs is velocity:surface.
+local hd is ARCTAN2(vs:x,vs:y).
+local rhd is 180-hd.
+lock steering to heading(rhd,85).
+} else{
+lock steering to up.
+}
+clearscreen.
+}
+brakes off.
+print "landed".
